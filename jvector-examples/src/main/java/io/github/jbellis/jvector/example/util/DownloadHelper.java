@@ -5,6 +5,10 @@ import software.amazon.awssdk.http.crt.AwsCrtAsyncHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3AsyncClientBuilder;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
+import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.transfer.s3.S3TransferManager;
 import software.amazon.awssdk.transfer.s3.model.CompletedFileDownload;
 import software.amazon.awssdk.transfer.s3.model.DownloadFileRequest;
@@ -137,5 +141,19 @@ public class DownloadHelper {
             System.out.println("Error downloading data: " + e.getMessage());
             System.exit(1);
         }
+    }
+
+    public static List<String> s3FileListing() {
+        S3Client s3 = S3Client.builder().region(Region.US_EAST_1).credentialsProvider(AnonymousCredentialsProvider.create()).build();
+        ListObjectsV2Request req = ListObjectsV2Request.builder().bucket(bucketName).build();
+        ListObjectsV2Response res = s3.listObjectsV2(req);
+        List<String> filenames = res.contents().stream().map(S3Object::key).collect(Collectors.toList());
+        for (String filename : filenames) {
+            System.out.println(filename);
+        }
+        return filenames;
+    }
+    public static void main(String... args) {
+        s3FileListing();
     }
 }
