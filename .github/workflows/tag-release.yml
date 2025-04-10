@@ -41,7 +41,7 @@ jobs:
 
       - name: Update revision in pom.xml
         run: |
-          sed -i '' 's|<revision>.*</revision>|<revision>${{ github.event.inputs.new_revision }}</revision>|' ./pom.xml
+          sed -i 's|<revision>.*</revision>|<revision>${{ github.event.inputs.new_revision }}</revision>|' ./pom.xml
           git add ./pom.xml
           git commit -m "chore (release): Start development on ${{ github.event.inputs.new_revision }}"
 
