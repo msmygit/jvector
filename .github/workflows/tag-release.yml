@@ -1,0 +1,58 @@
+# @author Madhavan Sridharan
+name: Prepare new tag & changelog PR
+
+# runs on
+# * manually triggered
+on:
+  workflow_dispatch:
+    inputs:
+      tag_version:
+        description: 'Tag version to create'
+        required: true
+
+# global env vars, available in all jobs and steps
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  new_tag_and_changelog:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Git config
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+
+      - name: Generate changelog
+        continue-on-error: true
+        run: ./update_changelog.sh
+
+      # Note: the tag version will be pushed right away at this step prior to changelog pr merging
+      - name: Create and push tag
+        run: |
+          git tag -a "v${{ github.event.inputs.tag_version }}" -m "Release tag version ${{ github.event.inputs.tag_version }}"
+          git push origin "${{ github.event.inputs.tag_version }}"
+
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v7
+        env:
+          GITHUB_TOKEN:
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: "release/bump-tag-version-and-update-changelog"
+          branch-suffix: "short-commit-hash"
+          base: "main"
+          title: "chore(release): Bump tag version and update changelog"
+          commit-message: "chore(release): Bump tag version and update changelog"
+          body: |
+            This pull request bumps the tag version to ${{ github.event.inputs.tag_version }} and updates changelog as part of the release process.
+            Please review and merge.
