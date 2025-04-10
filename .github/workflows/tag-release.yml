@@ -7,7 +7,10 @@ on:
   workflow_dispatch:
     inputs:
       tag_version:
-        description: 'Tag version to create'
+        description: 'Tag version to create (e.g. X.Y.Z-beta.M)'
+        required: true
+      new_revision:
+        description: 'New revision to update in pom.xml (e.g. X.Y.Z-beta.N-SNAPSHOT)'
         required: true
 
 # global env vars, available in all jobs and steps
@@ -36,6 +39,12 @@ jobs:
         continue-on-error: true
         run: ./update_changelog.sh
 
+      - name: Update revision in pom.xml
+        run: |
+          sed -i '' 's|<revision>.*</revision>|<revision>${{ github.event.inputs.new_revision }}</revision>|' pom.xml
+          git add pom.xml
+          git commit -m "chore (release): Start development on ${{ github.event.inputs.new_revision }}"
+
       # Note: the tag version will be pushed right away at this step prior to changelog pr merging
       - name: Create and push tag
         run: |
@@ -54,5 +63,8 @@ jobs:
           title: "chore(release): Bump tag version and update changelog"
           commit-message: "chore(release): Bump tag version and update changelog"
           body: |
-            This pull request bumps the tag version to ${{ github.event.inputs.tag_version }} and updates changelog as part of the release process.
+            This pull request does the following as part of the release process,
+            - bumps the tag version to ${{ github.event.inputs.tag_version }}
+            - updates changelog
+            - bumps the revision in pom.xml to ${{ github.event.inputs.new_revision }}
             Please review and merge.
